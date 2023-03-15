@@ -31,8 +31,7 @@ const AuthModal: React.FC = () => {
   useEffect(() => {
     if (user) handleClose();
     // console.log("user", user);
-  }, [user])
-  
+  }, [user]);
 
   return (
     <>
@@ -57,8 +56,7 @@ const AuthModal: React.FC = () => {
               justify="center"
               width="70%"
             >
-              {modalState.view === "login" || modalState.view === "signup" ?
-              (
+              {modalState.view === "login" || modalState.view === "signup" ? (
                 <>
                   <OAuthButtons />
                   <Text color="gray.500" fontWeight={700}>
@@ -69,7 +67,6 @@ const AuthModal: React.FC = () => {
               ) : (
                 <ResetPassword />
               )}
-
             </Flex>
           </ModalBody>
         </ModalContent>

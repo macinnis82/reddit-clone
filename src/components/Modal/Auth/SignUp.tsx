@@ -13,12 +13,8 @@ const SignUp: React.FC = () => {
     password: "",
     confirmPassword: "",
   });
-  const [
-    createUserWithEmailAndPassword,
-    user,
-    loading,
-    userError,
-  ] = useCreateUserWithEmailAndPassword(auth);
+  const [createUserWithEmailAndPassword, user, loading, userError] =
+    useCreateUserWithEmailAndPassword(auth);
   const [error, setError] = useState("");
 
   // Firebase logic
@@ -112,14 +108,15 @@ const SignUp: React.FC = () => {
         bg="gray.50"
       />
       <Text textAlign="center" color="red" fontSize="10pt">
-        {error || FIREBASE_ERRORS[userError?.message as keyof typeof FIREBASE_ERRORS]}
+        {error ||
+          FIREBASE_ERRORS[userError?.message as keyof typeof FIREBASE_ERRORS]}
       </Text>
-      <Button 
-        type="submit" 
-        width="100%" 
-        height="36px" 
-        mt={2} 
-        mb={2} 
+      <Button
+        type="submit"
+        width="100%"
+        height="36px"
+        mt={2}
+        mb={2}
         isLoading={loading}
       >
         Sign Up
