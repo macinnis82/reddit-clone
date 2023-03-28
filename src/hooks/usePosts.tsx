@@ -2,16 +2,17 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
   getDocs,
   query,
   where,
   writeBatch,
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
+import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
+import { authModalState } from "../atoms/authmodalAtom";
 import { communityState } from "../atoms/communitiesAtom";
 import { Post, postState, PostVote } from "../atoms/postAtom";
 import { auth, firestore, storage } from "../firebase/clientApp";
@@ -19,15 +20,22 @@ import { auth, firestore, storage } from "../firebase/clientApp";
 const usePosts = () => {
   const [postStateValue, setPostStateValue] = useRecoilState(postState);
   const [user] = useAuthState(auth);
-  const currentCommunity = useRecoilValue(communityState);
+  const communityStateValue = useRecoilValue(communityState);
+  const setAuthModalState = useSetRecoilState(authModalState);
+  const router = useRouter();
 
-  const onVote = async (post: Post, vote: number, communityId: string) => {
+  const onVote = async (
+    event: React.MouseEvent<SVGElement, MouseEvent>,
+    post: Post,
+    vote: number,
+    communityId: string
+  ) => {
+    event.stopPropagation();
     // check for a user => if not open auth modal
-    // if (!user) {
-    //   // open modal
-    //   setAuthModalState({ open: true, view: "login" });
-    //   return;
-    // }
+    if (!user) {
+      setAuthModalState({ open: true, view: "login" });
+      return;
+    }
 
     try {
       const { voteStatus } = post;
@@ -127,12 +135,26 @@ const usePosts = () => {
         posts: updatedPosts,
         postVotes: updatedPostVotes,
       }));
+
+      if (postStateValue.selectedPost) {
+        setPostStateValue((prev) => ({
+          ...prev,
+          selectedPost: updatedPost,
+        }));
+      }
     } catch (error) {
       console.log("onVote error", error);
     }
   };
 
-  const onSelectPost = () => {};
+  const onSelectPost = (post: Post) => {
+    setPostStateValue((prev) => ({
+      ...prev,
+      selectedPost: post,
+    }));
+
+    router.push(`/r/${post.communityId}/comments/${post.id}`);
+  };
 
   const onDeletePost = async (post: Post): Promise<boolean> => {
     try {
@@ -160,7 +182,7 @@ const usePosts = () => {
 
   const getCommunityPostVotes = async (communityId: string) => {
     const postVotesQuery = query(
-      collection(firestore, "users", `${user?.uid}/postVotes`),
+      collection(firestore, `users/${user?.uid}/postVotes`),
       where("communityId", "==", communityId)
     );
 
@@ -177,9 +199,19 @@ const usePosts = () => {
   };
 
   useEffect(() => {
-    if (!user?.uid || currentCommunity) return;
-    getCommunityPostVotes(currentCommunity?.id);
-  }, [user, currentCommunity]);
+    if (!user || !communityStateValue.currentCommunity) return;
+    getCommunityPostVotes(communityStateValue.currentCommunity.id);
+  }, [user, communityStateValue.currentCommunity]);
+
+  useEffect(() => {
+    if (!user) {
+      // clear user post votes
+      setPostStateValue((prev) => ({
+        ...prev,
+        postVotes: [],
+      }));
+    }
+  }, [user]);
 
   return {
     postStateValue,
